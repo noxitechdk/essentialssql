@@ -1,6 +1,3 @@
-# EssentialsSQL Configuration
-# Plugin to sync Essentials user data with MySQL database
-
 # Database Configuration
 database:
   enabled: true
