@@ -1,0 +1,74 @@
+name: EssentialsSQL
+version: '1.0-SNAPSHOT'
+main: dk.noxitech.essentialssql.Main
+api-version: '1.21'
+authors:
+  - NoXi
+  - NoXiTech.dk
+description: MySQL storage for Essentials userdata with cross-server sync and shop integration
+softdepend: [Essentials, Vault, ChestShop, AuctionHouse, PlayerShopGUI+, ShopChest]
+
+commands:
+  essentialssql:
+    description: Main EssentialsSQL command
+    usage: /<command> <subcommand> [args]
+    aliases: [esql, essql]
+    permission: essentialssql.use
+    permission-message: "§cYou don't have permission to use this command!"
+
+permissions:
+  essentialssql.*:
+    description: Gives access to all EssentialsSQL commands
+    children:
+      essentialssql.use: true
+      essentialssql.admin.*: true
+      essentialssql.baltop: true
+    default: op
+
+  essentialssql.use:
+    description: Basic permission to use EssentialsSQL commands
+    default: true
+
+  essentialssql.admin.*:
+    description: Gives access to all admin commands
+    children:
+      essentialssql.admin.import: true
+      essentialssql.admin.export: true
+      essentialssql.admin.cleanup: true
+      essentialssql.admin.reload: true
+      essentialssql.admin.status: true
+      essentialssql.admin.sync: true
+      essentialssql.admin.delete: true
+    default: op
+
+  essentialssql.admin.import:
+    description: Permission to import userdata files to database
+    default: op
+
+  essentialssql.admin.export:
+    description: Permission to export database data to userdata files
+    default: op
+
+  essentialssql.admin.cleanup:
+    description: Permission to run cleanup operations
+    default: op
+
+  essentialssql.admin.reload:
+    description: Permission to reload plugin configuration
+    default: op
+
+  essentialssql.admin.status:
+    description: Permission to view plugin status
+    default: op
+
+  essentialssql.admin.sync:
+    description: Permission to manually sync player data
+    default: op
+
+  essentialssql.admin.delete:
+    description: Permission to delete userdata folder
+    default: op
+
+  essentialssql.baltop:
+    description: Permission to view balance top
+    default: true
