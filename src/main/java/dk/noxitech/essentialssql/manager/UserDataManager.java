@@ -57,7 +57,7 @@ public class UserDataManager {
                 try {
                     String userData = isDataCompressed(data) ? decompressData(data) : data;
 
-                    if (plugin.getConfig().getBoolean("data.filters.enabled", true)) {
+                    if (plugin.getConfig().getBoolean("data.filters.enabled", false)) {
                         userData = filterUserData(userData);
                     }
 
@@ -92,8 +92,17 @@ public class UserDataManager {
 
                 String userData = new String(Files.readAllBytes(userFile));
 
-                if (plugin.getConfig().getBoolean("data.filters.enabled", true)) {
+                plugin.getLogger().info(String.format("[DEBUG] Reading userdata for %s: %d bytes", playerName, userData.length()));
+                if (userData.length() > 0) {
+                    plugin.getLogger().info(String.format("[DEBUG] First 200 chars of data for %s: %s", playerName, 
+                        userData.length() > 200 ? userData.substring(0, 200) + "..." : userData));
+                }
+
+                if (plugin.getConfig().getBoolean("data.filters.enabled", false)) {
                     userData = filterUserData(userData);
+                    plugin.getLogger().info(String.format("[DEBUG] Data filtered for %s", playerName));
+                } else {
+                    plugin.getLogger().info(String.format("[DEBUG] Filtering DISABLED - preserving ALL data for %s", playerName));
                 }
 
                 int maxDataSize = plugin.getConfig().getInt("data.max-data-size", 0);
@@ -105,11 +114,18 @@ public class UserDataManager {
                 }
 
                 if (plugin.getConfig().getBoolean("data.compress-data", true)) {
+                    int originalSize = userData.length();
                     userData = compressData(userData);
+                    plugin.getLogger().info(String.format("[DEBUG] Data compressed for %s: %d -> %d bytes", playerName, originalSize, userData.length()));
+                } else {
+                    plugin.getLogger().info(String.format("[DEBUG] Compression disabled for %s: %d bytes", playerName, userData.length()));
                 }
 
-                return databaseManager.saveUserData(playerUuid, playerName, userData).join();
-                
+                plugin.getLogger().info(String.format("[DEBUG] Attempting to save %d bytes to database for player %s (%s)", userData.length(), playerName, playerUuid));
+                boolean result = databaseManager.saveUserData(playerUuid, playerName, userData).join();
+                plugin.getLogger().info(String.format("[DEBUG] Database save result for %s: %s", playerName, result));
+                return result;
+
             } catch (Exception e) {
                 plugin.getLogger().log(Level.SEVERE, 
                     String.format("Failed to save data for player %s (%s)", playerName, playerUuid), e);
@@ -127,10 +143,10 @@ public class UserDataManager {
         return CompletableFuture.supplyAsync(() -> {
             try {
                 Path userFile = essentialsDataPath.resolve(playerUuid.toString() + ".yml");
-                
+
                 if (Files.exists(userFile)) {
                     Files.delete(userFile);
-                    
+
                     if (plugin.getConfig().getBoolean("debug.log-file-operations", false)) {
                         plugin.getLogger().info(String.format("Deleted local userdata file for player %s (%s)", 
                                                             playerName, playerUuid));
@@ -158,7 +174,7 @@ public class UserDataManager {
                 if (plugin.getConfig().getBoolean("commands.import-export.backup-before-import", true)) {
                     createBackup("import");
                 }
-                
+
                 Files.list(essentialsDataPath)
                     .filter(path -> path.toString().endsWith(".yml"))
                     .forEach(path -> {
@@ -173,8 +189,12 @@ public class UserDataManager {
 
                             String userData = new String(Files.readAllBytes(path));
 
-                            if (plugin.getConfig().getBoolean("data.filters.enabled", true)) {
+                            if (plugin.getConfig().getBoolean("data.filters.enabled", false)) {
                                 userData = filterUserData(userData);
+                            } else {
+                                if (plugin.getConfig().getBoolean("debug.log-file-operations", false)) {
+                                    plugin.getLogger().info(String.format("Importing ALL data for player %s (filtering disabled)", playerName));
+                                }
                             }
 
                             if (plugin.getConfig().getBoolean("data.compress-data", true)) {
@@ -187,20 +207,20 @@ public class UserDataManager {
                             if (balance >= 0) {
                                 databaseManager.updateBalanceCache(playerUuid, playerName, balance);
                             }
-                            
+
                         } catch (Exception e) {
                             plugin.getLogger().warning("Failed to import file: " + path.getFileName() + " - " + e.getMessage());
                         }
                     });
-                    
+
                 importedCount = (int) Files.list(essentialsDataPath)
                     .filter(path -> path.toString().endsWith(".yml"))
                     .count();
-                    
+
             } catch (Exception e) {
                 plugin.getLogger().log(Level.SEVERE, "Failed to import user data", e);
             }
-            
+
             return importedCount;
         });
     }
@@ -214,7 +234,7 @@ public class UserDataManager {
                     if (plugin.getConfig().getBoolean("commands.import-export.backup-before-export", true)) {
                         createBackup("export");
                     }
-                    
+
                     for (DatabaseManager.PlayerData playerData : players) {
                         try {
                             String userData = playerData.getData();
@@ -225,18 +245,18 @@ public class UserDataManager {
 
                             Path userFile = essentialsDataPath.resolve(playerData.getUuid().toString() + ".yml");
                             Files.write(userFile, userData.getBytes());
-                            
+
                             exportedCount++;
-                            
+
                         } catch (Exception e) {
                             plugin.getLogger().warning("Failed to export data for player: " + playerData.getName() + " - " + e.getMessage());
                         }
                     }
-                    
+
                 } catch (Exception e) {
                     plugin.getLogger().log(Level.SEVERE, "Failed to export user data", e);
                 }
-                
+
                 return exportedCount;
             });
         });
@@ -255,15 +275,15 @@ public class UserDataManager {
                                 plugin.getLogger().warning("Failed to delete file: " + path.getFileName());
                             }
                         });
-                    
+
                     plugin.getLogger().info("Deleted all files in Essentials userdata folder");
                     return true;
                 }
-                
+
             } catch (Exception e) {
                 plugin.getLogger().log(Level.SEVERE, "Failed to delete userdata folder", e);
             }
-            
+
             return false;
         });
     }
@@ -293,7 +313,7 @@ public class UserDataManager {
             filters.put("teleport-requests", plugin.getConfig().getBoolean("data.filters.teleport-requests", true));
 
             return userData;
-            
+
         } catch (Exception e) {
             plugin.getLogger().warning("Failed to filter user data: " + e.getMessage());
             return userData;
@@ -313,21 +333,28 @@ public class UserDataManager {
         }
     }
 
+    /**
+     * Public method to decompress data for debugging
+     */
+    public String decompressDataPublic(String compressedData) {
+        return decompressData(compressedData);
+    }
+
     private String decompressData(String compressedData) {
         try {
             String base64Data = compressedData.substring(5);
             byte[] compressedBytes = java.util.Base64.getDecoder().decode(base64Data);
-            
+
             ByteArrayInputStream bais = new ByteArrayInputStream(compressedBytes);
             try (GZIPInputStream gzipIn = new GZIPInputStream(bais);
                  ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
-                
+
                 byte[] buffer = new byte[1024];
                 int len;
                 while ((len = gzipIn.read(buffer)) != -1) {
                     baos.write(buffer, 0, len);
                 }
-                
+
                 return baos.toString();
             }
         } catch (Exception e) {
@@ -358,7 +385,7 @@ public class UserDataManager {
         try {
             String content = new String(Files.readAllBytes(filePath));
             String[] lines = content.split("\n");
-            
+
             for (String line : lines) {
                 String trimmedLine = line.trim();
 
@@ -366,7 +393,7 @@ public class UserDataManager {
                     String balanceStr = trimmedLine.substring(6).trim();
 
                     balanceStr = balanceStr.replace("'", "").replace("\"", "");
-                    
+
                     if (!balanceStr.isEmpty()) {
                         double balance = Double.parseDouble(balanceStr);
 
@@ -381,14 +408,14 @@ public class UserDataManager {
                 if (trimmedLine.startsWith("balance:")) {
                     String balanceStr = trimmedLine.substring(8).trim();
                     balanceStr = balanceStr.replace("'", "").replace("\"", "");
-                    
+
                     if (!balanceStr.isEmpty()) {
                         double balance = Double.parseDouble(balanceStr);
-                        
+
                         if (plugin.getConfig().getBoolean("debug.log-file-operations", false)) {
                             plugin.getLogger().info("Extracted balance " + balance + " from file: " + filePath.getFileName());
                         }
-                        
+
                         return balance;
                     }
                 }

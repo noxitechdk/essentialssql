@@ -22,7 +22,7 @@ public final class Main extends JavaPlugin {
     private ShopIntegrationManager shopIntegrationManager;
 
     private Economy economy;
-    
+
     @Override
     public void onEnable() {
         printStartupBanner();
@@ -41,7 +41,7 @@ public final class Main extends JavaPlugin {
         setupExternalIntegrations();
 
         startBackgroundTasks();
-        
+
         getLogger().info("EssentialsSQL has been enabled successfully!");
 
         if (getServer().getPluginManager().getPlugin("Essentials") == null) {
@@ -64,7 +64,7 @@ public final class Main extends JavaPlugin {
         if (databaseManager != null) {
             databaseManager.shutdown();
         }
-        
+
         getLogger().info("EssentialsSQL has been disabled!");
     }
 
@@ -80,7 +80,7 @@ public final class Main extends JavaPlugin {
             getLogger().warning("Database is disabled in configuration!");
             return false;
         }
-        
+
         try {
             databaseManager = new DatabaseManager(this);
             return databaseManager.initialize();
@@ -99,7 +99,7 @@ public final class Main extends JavaPlugin {
         cleanupManager.initialize();
 
         shopIntegrationManager = new ShopIntegrationManager(this, databaseManager);
-        
+
         getLogger().info("All components initialized successfully!");
     }
 
@@ -113,7 +113,7 @@ public final class Main extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new PlayerDataListener(this, userDataManager), this);
         getServer().getPluginManager().registerEvents(new EconomyListener(this, userDataManager), this);
         getServer().getPluginManager().registerEvents(shopIntegrationManager, this);
-        
+
         getLogger().info("Commands and listeners registered!");
     }
 
@@ -178,7 +178,7 @@ public final class Main extends JavaPlugin {
         stats.append("Economy Provider: ").append(economy != null ? economy.getName() : "None").append("\n");
         stats.append("Plugin Version: ").append(getDescription().getVersion()).append("\n");
         stats.append("Bukkit Version: ").append(getServer().getBukkitVersion()).append("\n");
-        
+
         return stats.toString();
     }
 }

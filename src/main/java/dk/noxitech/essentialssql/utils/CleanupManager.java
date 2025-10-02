@@ -9,12 +9,12 @@ import java.util.concurrent.CompletableFuture;
 import java.util.logging.Level;
 
 public class CleanupManager {
-    
+
     private final Main plugin;
     private final DatabaseManager databaseManager;
     private final UserDataManager userDataManager;
     private BukkitRunnable cleanupTask;
-    
+
     public CleanupManager(Main plugin, DatabaseManager databaseManager, UserDataManager userDataManager) {
         this.plugin = plugin;
         this.databaseManager = databaseManager;
@@ -40,19 +40,19 @@ public class CleanupManager {
         if (!plugin.getConfig().getBoolean("cleanup.enabled", false)) {
             return;
         }
-        
+
         int intervalHours = plugin.getConfig().getInt("cleanup.cleanup-interval", 24);
         if (intervalHours <= 0) {
             return;
         }
-        
+
         plugin.getLogger().info("Scheduling automatic cleanup every " + intervalHours + " hours");
-        
+
         cleanupTask = new BukkitRunnable() {
             @Override
             public void run() {
                 plugin.getLogger().info("Running scheduled cleanup...");
-                
+
                 runCleanup().whenComplete((count, throwable) -> {
                     if (throwable != null) {
                         plugin.getLogger().log(Level.WARNING, "Scheduled cleanup failed", throwable);
@@ -69,7 +69,7 @@ public class CleanupManager {
 
     public CompletableFuture<Integer> runCleanup() {
         int inactiveDays = plugin.getConfig().getInt("cleanup.inactive-days", 365);
-        
+
         return databaseManager.cleanupInactiveUsers(inactiveDays)
             .whenComplete((count, throwable) -> {
                 if (throwable == null && count > 0) {
@@ -86,13 +86,13 @@ public class CleanupManager {
 
             try {
                 Boolean result = deleteFuture.get(30, java.util.concurrent.TimeUnit.SECONDS);
-                
+
                 if (result) {
                     plugin.getLogger().info("Userdata folder deleted successfully on shutdown");
                 } else {
                     plugin.getLogger().warning("Failed to delete userdata folder on shutdown");
                 }
-                
+
             } catch (Exception e) {
                 plugin.getLogger().log(Level.WARNING, "Error deleting userdata folder on shutdown", e);
             }
@@ -105,7 +105,7 @@ public class CleanupManager {
                 int cacheDuration = plugin.getConfig().getInt("commands.balance-top.cache-duration", 300);
 
                 plugin.getLogger().info("Cache cleanup completed");
-                
+
             } catch (Exception e) {
                 plugin.getLogger().log(Level.WARNING, "Failed to cleanup expired cache", e);
             }
@@ -142,7 +142,7 @@ public class CleanupManager {
                 plugin.getLogger().info("Creating backup for " + backupType + " operation...");
                 plugin.getLogger().info("Backup created successfully");
                 return true;
-                
+
             } catch (Exception e) {
                 plugin.getLogger().log(Level.SEVERE, "Failed to create backup", e);
                 return false;
@@ -159,9 +159,9 @@ public class CleanupManager {
                 stats.inactivePlayers = 0;
                 stats.lastCleanupTime = System.currentTimeMillis();
                 stats.nextCleanupTime = calculateNextCleanupTime();
-                
+
                 return stats;
-                
+
             } catch (Exception e) {
                 plugin.getLogger().log(Level.WARNING, "Failed to get cleanup statistics", e);
                 return new CleanupStats();
@@ -173,12 +173,12 @@ public class CleanupManager {
         if (!plugin.getConfig().getBoolean("cleanup.enabled", false)) {
             return -1;
         }
-        
+
         int intervalHours = plugin.getConfig().getInt("cleanup.cleanup-interval", 24);
         if (intervalHours <= 0) {
             return -1;
         }
-        
+
         return System.currentTimeMillis() + (intervalHours * 60L * 60L * 1000L);
     }
 

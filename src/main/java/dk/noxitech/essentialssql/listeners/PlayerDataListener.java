@@ -15,17 +15,17 @@ import org.bukkit.scheduler.BukkitRunnable;
 import java.util.concurrent.CompletableFuture;
 
 public class PlayerDataListener implements Listener {
-    
+
     private final Main plugin;
     private final UserDataManager userDataManager;
     private final DatabaseManager databaseManager;
-    
+
     public PlayerDataListener(Main plugin, UserDataManager userDataManager) {
         this.plugin = plugin;
         this.userDataManager = userDataManager;
         this.databaseManager = plugin.getDatabaseManager();
     }
-    
+
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onPlayerJoin(PlayerJoinEvent event) {
         if (!plugin.getConfig().getBoolean("settings.load-on-join", true)) {
@@ -38,10 +38,10 @@ public class PlayerDataListener implements Listener {
         if (!loadingMessage.isEmpty()) {
             player.sendMessage(plugin.colorize(loadingMessage));
         }
-        
+
         if (plugin.getConfig().getBoolean("settings.async-operations", true)) {
             CompletableFuture<Boolean> loadFuture = userDataManager.loadPlayerData(player.getUniqueId(), player.getName());
-            
+
             loadFuture.whenComplete((success, throwable) -> {
                 if (throwable != null) {
                     plugin.getLogger().severe("Error loading data for player " + player.getName() + ": " + throwable.getMessage());
@@ -59,7 +59,7 @@ public class PlayerDataListener implements Listener {
                     }
                     return;
                 }
-                
+
                 if (success) {
                     plugin.getLogger().info("Successfully loaded data for player " + player.getName());
 
@@ -75,12 +75,12 @@ public class PlayerDataListener implements Listener {
                             }
                         }
                     }.runTaskLater(plugin, 40L);
-                    
+
                 } else {
                     plugin.getLogger().info("No existing data found for new player " + player.getName());
                 }
             });
-            
+
         } else {
             try {
                 boolean success = userDataManager.loadPlayerData(player.getUniqueId(), player.getName()).join();
@@ -99,13 +99,13 @@ public class PlayerDataListener implements Listener {
                             }
                         }
                     }.runTaskLater(plugin, 40L);
-                    
+
                 } else {
                     plugin.getLogger().info("No existing data found for new player " + player.getName());
                 }
             } catch (Exception e) {
                 plugin.getLogger().severe("Error loading data for player " + player.getName() + ": " + e.getMessage());
-                
+
                 String errorMessage = plugin.getConfig().getString("messages.data-load-failed", "&cFailed to load your data!");
                 if (!errorMessage.isEmpty()) {
                     player.sendMessage(plugin.colorize(errorMessage));
@@ -113,16 +113,19 @@ public class PlayerDataListener implements Listener {
             }
         }
     }
-    
+
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onPlayerQuit(PlayerQuitEvent event) {
         if (!plugin.getConfig().getBoolean("settings.save-on-quit", true)) {
+            plugin.getLogger().info("[DEBUG] Save on quit disabled - skipping save for " + event.getPlayer().getName());
             return;
         }
 
         Player player = event.getPlayer();
+        plugin.getLogger().info("[DEBUG] Player quit event triggered for " + player.getName() + " - starting data save");
 
         if (plugin.getConfig().getBoolean("settings.async-operations", true)) {
+            plugin.getLogger().info("[DEBUG] Starting async save for " + player.getName());
             CompletableFuture<Boolean> saveFuture = userDataManager.savePlayerData(player.getUniqueId(), player.getName());
 
             saveFuture.whenComplete((success, throwable) -> {
@@ -139,7 +142,7 @@ public class PlayerDataListener implements Listener {
                     plugin.getLogger().warning("Failed to save data for player " + player.getName());
                 }
             });
-            
+
         } else {
             try {
                 boolean success = userDataManager.savePlayerData(player.getUniqueId(), player.getName()).join();
@@ -147,7 +150,7 @@ public class PlayerDataListener implements Listener {
                     plugin.getLogger().info("Successfully saved data for player " + player.getName());
 
                     savePlayerBalanceToDatabase(player);
-                    
+
                 } else {
                     plugin.getLogger().warning("Failed to save data for player " + player.getName());
                 }
@@ -167,7 +170,7 @@ public class PlayerDataListener implements Listener {
             } else {
                 plugin.getLogger().warning("Essentials plugin not found or not enabled!");
             }
-            
+
         } catch (Exception e) {
             plugin.getLogger().warning("Failed to reload Essentials user data: " + e.getMessage());
         }
@@ -202,7 +205,7 @@ public class PlayerDataListener implements Listener {
                 if (economy != null) {
                     balance = economy.getBalance(player);
                     userDataManager.updatePlayerBalance(player.getUniqueId(), player.getName(), balance);
-                    
+
                     if (plugin.getConfig().getBoolean("debug.log-database-operations", false)) {
                         plugin.getLogger().info("Synced balance " + balance + " for player " + player.getName());
                     }
@@ -228,11 +231,11 @@ public class PlayerDataListener implements Listener {
                             if (economy != null) {
                                 double currentBalance = economy.getBalance(player);
                                 double databaseBalance = entry.getBalance();
-                                
+
                                 if (Math.abs(currentBalance - databaseBalance) > 0.01) {
                                     economy.withdrawPlayer(player, currentBalance);
                                     economy.depositPlayer(player, databaseBalance);
-                                    
+
                                     if (plugin.getConfig().getBoolean("debug.log-database-operations", false)) {
                                         plugin.getLogger().info("Loaded balance " + databaseBalance + " from database for player " + player.getName());
                                     }
@@ -260,7 +263,7 @@ public class PlayerDataListener implements Listener {
                 if (economy != null) {
                     double balance = economy.getBalance(player);
                     userDataManager.updatePlayerBalance(player.getUniqueId(), player.getName(), balance);
-                    
+
                     if (plugin.getConfig().getBoolean("debug.log-database-operations", false)) {
                         plugin.getLogger().info("Saved balance " + balance + " to database for player " + player.getName());
                     }

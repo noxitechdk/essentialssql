@@ -137,13 +137,13 @@ public class ShopIntegrationManager implements Listener {
 
     public String getIntegrationStatus() {
         StringBuilder status = new StringBuilder();
-        
+
         status.append("Shop Integration Status:\n");
         status.append("ChestShop: ").append(getPluginStatus(chestShopPlugin)).append("\n");
         status.append("AuctionHouse: ").append(getPluginStatus(auctionHousePlugin)).append("\n");
         status.append("PlayerShopGUI+: ").append(getPluginStatus(playerShopGUIPlugin)).append("\n");
         status.append("ShopChest: ").append(getPluginStatus(shopChestPlugin));
-        
+
         return status.toString();
     }
 

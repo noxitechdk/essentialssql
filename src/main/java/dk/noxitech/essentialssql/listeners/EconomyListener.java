@@ -14,7 +14,7 @@ import java.util.Arrays;
 import java.util.List;
 
 public class EconomyListener implements Listener {
-    
+
     private final Main plugin;
     private final UserDataManager userDataManager;
 
@@ -23,12 +23,12 @@ public class EconomyListener implements Listener {
         "give", "take", "set", "essentials:pay", "essentials:eco",
         "essentials:balance", "essentials:money"
     );
-    
+
     public EconomyListener(Main plugin, UserDataManager userDataManager) {
         this.plugin = plugin;
         this.userDataManager = userDataManager;
     }
-    
+
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onEconomyCommand(PlayerCommandPreprocessEvent event) {
         String command = event.getMessage().toLowerCase();
@@ -40,11 +40,11 @@ public class EconomyListener implements Listener {
                 break;
             }
         }
-        
+
         if (!isEconomyCommand) {
             return;
         }
-        
+
         Player player = event.getPlayer();
 
         new BukkitRunnable() {
@@ -64,7 +64,7 @@ public class EconomyListener implements Listener {
                 if (economy != null) {
                     double balance = economy.getBalance(player);
                     userDataManager.updatePlayerBalance(player.getUniqueId(), player.getName(), balance);
-                    
+
                     if (plugin.getConfig().getBoolean("debug.log-database-operations", false)) {
                         plugin.getLogger().info("Economy command: Synced balance " + balance + " for player " + player.getName());
                     }
@@ -78,7 +78,7 @@ public class EconomyListener implements Listener {
     private void syncTargetPlayerBalance(String command, Player sender) {
         try {
             String[] parts = command.split(" ");
-            
+
             if (parts.length >= 3) {
                 String targetPlayerName = null;
 
@@ -95,7 +95,7 @@ public class EconomyListener implements Listener {
                         targetPlayerName = parts[2];
                     }
                 }
-                
+
                 if (targetPlayerName != null) {
                     Player targetPlayer = plugin.getServer().getPlayer(targetPlayerName);
                     if (targetPlayer != null && targetPlayer.isOnline()) {
@@ -104,7 +104,7 @@ public class EconomyListener implements Listener {
                             if (economy != null) {
                                 double balance = economy.getBalance(targetPlayer);
                                 userDataManager.updatePlayerBalance(targetPlayer.getUniqueId(), targetPlayer.getName(), balance);
-                                
+
                                 if (plugin.getConfig().getBoolean("debug.log-database-operations", false)) {
                                     plugin.getLogger().info("Economy command: Synced target balance " + balance + " for player " + targetPlayer.getName());
                                 }
