@@ -92,17 +92,23 @@ public class UserDataManager {
 
                 String userData = new String(Files.readAllBytes(userFile));
 
-                plugin.getLogger().info(String.format("[DEBUG] Reading userdata for %s: %d bytes", playerName, userData.length()));
-                if (userData.length() > 0) {
-                    plugin.getLogger().info(String.format("[DEBUG] First 200 chars of data for %s: %s", playerName, 
-                        userData.length() > 200 ? userData.substring(0, 200) + "..." : userData));
+                if (plugin.getConfig().getBoolean("debug.log-file-operations", true) && plugin.getConfig().getBoolean("debug.enabled", true)) {
+                    plugin.getLogger().info(String.format("[DEBUG] Reading userdata for %s: %d bytes", playerName, userData.length()));
+                    if (userData.length() > 0) {
+                        plugin.getLogger().info(String.format("[DEBUG] First 200 chars of data for %s: %s", playerName,
+                            userData.length() > 200 ? userData.substring(0, 200) + "..." : userData));
+                    }
                 }
 
                 if (plugin.getConfig().getBoolean("data.filters.enabled", false)) {
                     userData = filterUserData(userData);
-                    plugin.getLogger().info(String.format("[DEBUG] Data filtered for %s", playerName));
+                    if (plugin.getConfig().getBoolean("debug.log-file-operations", true) && plugin.getConfig().getBoolean("debug.enabled", true)) {
+                        plugin.getLogger().info(String.format("[DEBUG] Data filtered for %s", playerName));
+                    }
                 } else {
-                    plugin.getLogger().info(String.format("[DEBUG] Filtering DISABLED - preserving ALL data for %s", playerName));
+                    if (plugin.getConfig().getBoolean("debug.log-file-operations", true) && plugin.getConfig().getBoolean("debug.enabled", true)) {
+                        plugin.getLogger().info(String.format("[DEBUG] Filtering DISABLED - preserving ALL data for %s", playerName));
+                    }
                 }
 
                 int maxDataSize = plugin.getConfig().getInt("data.max-data-size", 0);
@@ -116,14 +122,22 @@ public class UserDataManager {
                 if (plugin.getConfig().getBoolean("data.compress-data", true)) {
                     int originalSize = userData.length();
                     userData = compressData(userData);
-                    plugin.getLogger().info(String.format("[DEBUG] Data compressed for %s: %d -> %d bytes", playerName, originalSize, userData.length()));
+                    if (plugin.getConfig().getBoolean("debug.log-file-operations", true) && plugin.getConfig().getBoolean("debug.enabled", true)) {
+                        plugin.getLogger().info(String.format("[DEBUG] Data compressed for %s: %d -> %d bytes", playerName, originalSize, userData.length()));
+                    }
                 } else {
-                    plugin.getLogger().info(String.format("[DEBUG] Compression disabled for %s: %d bytes", playerName, userData.length()));
+                    if (plugin.getConfig().getBoolean("debug.log-file-operations", true) && plugin.getConfig().getBoolean("debug.enabled", true)) {
+                        plugin.getLogger().info(String.format("[DEBUG] Compression disabled for %s: %d bytes", playerName, userData.length()));
+                    }
                 }
 
-                plugin.getLogger().info(String.format("[DEBUG] Attempting to save %d bytes to database for player %s (%s)", userData.length(), playerName, playerUuid));
+                if (plugin.getConfig().getBoolean("debug.log-file-operations", true) && plugin.getConfig().getBoolean("debug.enabled", true)) {
+                    plugin.getLogger().info(String.format("[DEBUG] Attempting to save %d bytes to database for player %s (%s)", userData.length(), playerName, playerUuid));
+                }
                 boolean result = databaseManager.saveUserData(playerUuid, playerName, userData).join();
-                plugin.getLogger().info(String.format("[DEBUG] Database save result for %s: %s", playerName, result));
+                if (plugin.getConfig().getBoolean("debug.log-file-operations", true) && plugin.getConfig().getBoolean("debug.enabled", true)) {
+                    plugin.getLogger().info(String.format("[DEBUG] Database save result for %s: %s", playerName, result));
+                }
                 return result;
 
             } catch (Exception e) {

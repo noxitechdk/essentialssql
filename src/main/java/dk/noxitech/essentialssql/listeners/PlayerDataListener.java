@@ -117,15 +117,21 @@ public class PlayerDataListener implements Listener {
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onPlayerQuit(PlayerQuitEvent event) {
         if (!plugin.getConfig().getBoolean("settings.save-on-quit", true)) {
-            plugin.getLogger().info("[DEBUG] Save on quit disabled - skipping save for " + event.getPlayer().getName());
+            if (plugin.getConfig().getBoolean("debug.enabled", true)) {
+                plugin.getLogger().info("[DEBUG] Save on quit disabled - skipping save for " + event.getPlayer().getName());
+            }
             return;
         }
 
         Player player = event.getPlayer();
-        plugin.getLogger().info("[DEBUG] Player quit event triggered for " + player.getName() + " - starting data save");
+        if (plugin.getConfig().getBoolean("debug.enabled", true)) {
+            plugin.getLogger().info("[DEBUG] Player quit event triggered for " + player.getName() + " - starting data save");
+        }
 
         if (plugin.getConfig().getBoolean("settings.async-operations", true)) {
-            plugin.getLogger().info("[DEBUG] Starting async save for " + player.getName());
+            if (plugin.getConfig().getBoolean("debug.enabled", true)) {
+                plugin.getLogger().info("[DEBUG] Starting async save for " + player.getName());
+            }
             CompletableFuture<Boolean> saveFuture = userDataManager.savePlayerData(player.getUniqueId(), player.getName());
 
             saveFuture.whenComplete((success, throwable) -> {
@@ -142,7 +148,6 @@ public class PlayerDataListener implements Listener {
                     plugin.getLogger().warning("Failed to save data for player " + player.getName());
                 }
             });
-
         } else {
             try {
                 boolean success = userDataManager.savePlayerData(player.getUniqueId(), player.getName()).join();
